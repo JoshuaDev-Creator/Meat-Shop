@@ -41,7 +41,7 @@ const meats = [
     subTamil: "சிறப்பு நெல்லை காடை",
     desc: "Wild-texture, rich in iron. Cleaned and ready-to-cook. Exceptional for pepper fry, salna, or the classic Tirunelveli kaadai kozhambu.",
     badge: "டெலிவரிக்கு 30 நிமிடம் முன் வெட்டப்படுகிறது",
-    price: "₹140",
+    price: "₹70",
     unit: "/ piece",
     tag: "Nellai Special",
     tagColor: "#7C2D12",
