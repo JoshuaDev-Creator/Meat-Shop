@@ -1,282 +1,720 @@
 "use client";
+
+/* eslint-disable react/no-unescaped-entities */
+
 import { useState, useEffect } from "react";
 
-const MEATS = [
-    {
-        id: "village_chicken",
-        emoji: "🐔",
-        name: "Village Chicken",
-        tamil: "கிராம நாட்டுக்கோழி",
-        badge: "🌿 Home Grown",
-        badgeColor: "#166534",
-        badgeBg: "#DCFCE7",
-        desc: "Raised freely in village homes — not a farm. Slower grown, darker meat, richest flavour. Best for country chicken gravy.",
-        pricePerKg: 380,
-        unit: "kg",
-        minQty: 0.5,
-        step: 0.5,
-        cuts: ["Whole", "Curry Cut", "Boneless", "Leg Pieces"],
-    },
-    {
-        id: "farm_chicken",
-        emoji: "🐓",
-        name: "Farm Country Chicken",
-        tamil: "பண்ணை நாட்டுக்கோழி",
-        badge: "🏡 Farm Raised",
-        badgeColor: "#92400E",
-        badgeBg: "#FEF3C7",
-        desc: "Country breed chicken raised on a farm — same desi breed as village chicken, more available, slightly lighter taste. Great value.",
-        pricePerKg: 280,
-        unit: "kg",
-        minQty: 0.5,
-        step: 0.5,
-        cuts: ["Whole", "Curry Cut", "Boneless", "Leg Pieces", "Breast Pieces"],
-    },
-    {
-        id: "broiler",
-        emoji: "🍗",
-        name: "Broiler Chicken",
-        tamil: "பிராய்லர் கோழி",
-        badge: "⚡ Everyday",
-        badgeColor: "#1e40af",
-        badgeBg: "#DBEAFE",
-        desc: "Regular white chicken from the market. Soft meat, mild taste. Good for butter chicken, fry, or daily cooking.",
-        pricePerKg: 180,
-        unit: "kg",
-        minQty: 1,
-        step: 0.5,
-        cuts: ["Whole", "Curry Cut", "Boneless", "Leg Pieces", "Breast Pieces"],
-    },
-    {
-        id: "mutton",
-        emoji: "🐑",
-        name: "Mutton (Goat)",
-        tamil: "ஆட்டு இறைச்சி",
-        badge: null,
-        badgeColor: "",
-        badgeBg: "",
-        desc: "Fresh goat meat from local farms. Perfect for Tirunelveli salna, kuzhambu & biryani.",
-        pricePerKg: 780,
-        unit: "kg",
-        minQty: 0.5,
-        step: 0.5,
-        cuts: ["Curry Cut", "Chops", "Ribs", "Boneless", "Leg"],
-    },
-    {
-        id: "quail",
-        emoji: "🐦",
-        name: "Quail (Kaada)",
-        tamil: "காடை",
-        badge: null,
-        badgeColor: "",
-        badgeBg: "",
-        desc: "Small game bird — very tasty fried or in gravy. Whole cleaned. Minimum 2 pieces.",
-        pricePerKg: 120,
-        unit: "piece",
-        minQty: 2,
-        step: 1,
-        cuts: ["Whole Cleaned", "Marinated", "Half Cut"],
-    },
-    {
-        id: "turkey",
-        emoji: "🦃",
-        name: "Turkey",
-        tamil: "வான்கோழி",
-        badge: null,
-        badgeColor: "",
-        badgeBg: "",
-        desc: "Large bird, meaty & flavourful. Good for special occasions. Minimum 1 kg.",
-        pricePerKg: 450,
-        unit: "kg",
-        minQty: 1,
-        step: 0.5,
-        cuts: ["Whole", "Curry Cut", "Breast Pieces", "Leg"],
-    },
-    {
-        id: "pigeon",
-        emoji: "🕊️",
-        name: "Pigeon (Parava)",
-        tamil: "புறா",
-        badge: null,
-        badgeColor: "",
-        badgeBg: "",
-        desc: "Small bird, rich taste. Popular for health benefits. Whole cleaned. Minimum 2 pieces.",
-        pricePerKg: 150,
-        unit: "piece",
-        minQty: 2,
-        step: 1,
-        cuts: ["Whole Cleaned", "Marinated"],
-    },
-    {
-        id: "rabbit",
-        emoji: "🐇",
-        name: "Rabbit (Muyal)",
-        tamil: "முயல்",
-        badge: null,
-        badgeColor: "",
-        badgeBg: "",
-        desc: "Lean, tasty meat. Low fat. Great for pepper fry or curry. Minimum 1 kg.",
-        pricePerKg: 600,
-        unit: "kg",
-        minQty: 1,
-        step: 0.5,
-        cuts: ["Whole", "Curry Cut"],
-    },
-];
+type Meat = {
+    id: string;
 
-const OWNER_WHATSAPP = "919025761741";
+    emoji: string;
+
+    name: string;
+
+    tamil: string;
+
+    subTamil: string;
+
+    badge: string | null;
+
+    badgeColor: string;
+
+    badgeBg: string;
+
+    highlight: string | null;
+
+    desc: string;
+
+    pricePerKg: number;
+
+    unit: "kg" | "piece";
+
+    minQty: number;
+
+    step: number;
+
+    cuts: string[];
+
+    image: string;
+
+    accent: string;
+};
 
 type CartItem = {
     id: string;
+
     name: string;
+
     emoji: string;
+
     qty: number;
-    unit: string;
+
+    unit: "kg" | "piece";
+
     cut: string;
+
     price: number;
+
     subtotal: number;
 };
 
-export default function OrderPage() {
-    const [cart, setCart] = useState<CartItem[]>([]);
-    const [selections, setSelections] = useState<Record<string, { qty: number; cut: string }>>(
-        Object.fromEntries(MEATS.map((m) => [m.id, { qty: m.minQty, cut: m.cuts[0] }]))
-    );
-    const [step, setStep] = useState<"menu" | "details" | "confirm">("menu");
-    const [form, setForm] = useState({ name: "", phone: "", address: "", time: "morning", notes: "" });
-    const [submitted, setSubmitted] = useState(false);
-    const [cartOpen, setCartOpen] = useState(false);
-    const [isMobile, setIsMobile] = useState(false);
+type Selection = { qty: number; cut: string };
 
-    useEffect(() => {
-        const check = () => setIsMobile(window.innerWidth < 768);
-        check();
-        window.addEventListener("resize", check);
-        return () => window.removeEventListener("resize", check);
-    }, []);
+type FormData = {
+    name: string;
+    phone: string;
+    address: string;
+    time: "morning" | "afternoon" | "evening";
+    notes: string;
+};
 
-    const getSel = (m: (typeof MEATS)[0]) =>
-        selections[m.id] ?? { qty: m.minQty, cut: m.cuts[0] };
+type CartContentsProps = {
+    cart: CartItem[];
+    removeFromCart: (idx: number) => void;
+    total: number;
+    onProceed: () => void;
+};
 
-    const addToCart = (meat: (typeof MEATS)[0]) => {
-        const sel = getSel(meat);
-        const existing = cart.find((c) => c.id === meat.id && c.cut === sel.cut);
-        const subtotal = parseFloat((sel.qty * meat.pricePerKg).toFixed(0));
-        if (existing) {
-            setCart(cart.map((c) =>
-                c.id === meat.id && c.cut === sel.cut
-                    ? { ...c, qty: parseFloat((c.qty + sel.qty).toFixed(1)), subtotal: c.subtotal + subtotal }
-                    : c
-            ));
-        } else {
-            setCart([...cart, {
-                id: meat.id, name: meat.name, emoji: meat.emoji,
-                qty: sel.qty, unit: meat.unit, cut: sel.cut,
-                price: meat.pricePerKg, subtotal,
-            }]);
-        }
-        if (isMobile) setCartOpen(true);
-    };
-
-    const removeFromCart = (idx: number) => setCart(cart.filter((_, i) => i !== idx));
-    const total = cart.reduce((s, c) => s + c.subtotal, 0);
-    const timeLabel = form.time === "morning" ? "Morning (7–12 PM)" : form.time === "afternoon" ? "Afternoon (12–5 PM)" : "Evening (5–8 PM)";
-
-    const sendWhatsApp = () => {
-        const itemLines = cart
-            .map((item) => `  ${item.emoji} ${item.name} — ${item.qty} ${item.unit} (${item.cut}) = ₹${item.subtotal}`)
-            .join("\n");
-        const message = [
-            "🥩 *NEW ORDER — NattuKadai*",
-            "─────────────────────",
-            "*Items:*",
-            itemLines,
-            "🥚 FREE country hen egg included",
-            "─────────────────────",
-            `💰 *Total: ₹${total}*`,
-            "",
-            "📦 *Delivery Details:*",
-            `👤 Name: ${form.name}`,
-            `📞 Phone: ${form.phone}`,
-            `🏠 Address: ${form.address}`,
-            `⏰ Time: ${timeLabel}`,
-            ...(form.notes ? [`📝 Notes: ${form.notes}`] : []),
-            "─────────────────────",
-            "💳 Payment: Cash on Delivery",
-        ].join("\n");
-        window.open(`https://wa.me/${OWNER_WHATSAPP}?text=${encodeURIComponent(message)}`, "_blank");
-    };
-
-    const handleConfirm = () => { sendWhatsApp(); setSubmitted(true); };
-
-    // ── Reusable cart contents ──────────────────────────────────────────
-    const CartContents = ({ onProceed }: { onProceed: () => void }) => (
+function CartContents({
+    cart,
+    removeFromCart,
+    total,
+    onProceed,
+}: CartContentsProps) {
+    return (
         <>
             {cart.length === 0 ? (
-                <p style={{ color: "#A07850", fontSize: "14px", textAlign: "center", padding: "24px 0" }}>No items yet.</p>
+                <div className="text-center py-8">
+                    <div className="text-4xl mb-2.5">🛒</div>
+
+                    <p className="text-[#78716C] text-sm font-['Tiro_Tamil']">
+                        இன்னும் எதுவும் சேர்க்கவில்லை
+                    </p>
+
+                    <p className="text-[#A8A29E] text-xs">
+                        No items yet — add some meat!
+                    </p>
+                </div>
             ) : (
                 <>
                     {cart.map((item, i) => (
-                        <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", padding: "10px 0", borderBottom: "1px solid #F5EDE0" }}>
-                            <div>
-                                <p style={{ margin: "0 0 2px", fontSize: "14px", fontWeight: 500, color: "#1A0A00" }}>{item.emoji} {item.name}</p>
-                                <p style={{ margin: 0, fontSize: "12px", color: "#A07850" }}>{item.qty} {item.unit} · {item.cut}</p>
+                        <div
+                            key={i}
+                            className="flex justify-between items-start py-3 border-b border-[#F5EDE0]"
+                        >
+                            <div className="flex-1">
+                                <p className="m-0 mb-0.5 text-sm font-semibold text-[#1A0800] font-['Oswald'] tracking-[0.03em]">
+                                    {item.emoji} {item.name}
+                                </p>
+
+                                <p className="m-0 text-xs text-[#78716C] font-['Tiro_Tamil']">
+                                    {item.qty} {item.unit} · {item.cut}
+                                </p>
                             </div>
-                            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                                <span style={{ fontWeight: 700, color: "#C8410A", fontSize: "14px" }}>₹{item.subtotal}</span>
-                                <button onClick={() => removeFromCart(i)} style={{ background: "none", border: "none", cursor: "pointer", color: "#C05050", fontSize: "20px", lineHeight: 1, padding: "0 4px" }}>×</button>
+
+                            <div className="flex items-center gap-2">
+                                <span className="font-bold text-[#7C2D12] text-[15px] font-['Oswald']">
+                                    ₹{item.subtotal}
+                                </span>
+
+                                <button
+                                    onClick={() => removeFromCart(i)}
+                                    className="bg-[#FEF2F2] border border-[#FECACA] cursor-pointer text-[#DC2626] text-sm leading-none px-2 py-0.5 rounded-md"
+                                >
+                                    ×
+                                </button>
                             </div>
                         </div>
                     ))}
-                    {/* Free egg reminder */}
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "10px 0", borderBottom: "1px solid #F5EDE0" }}>
-                        <span style={{ fontSize: "18px" }}>🥚</span>
-                        <span style={{ fontSize: "13px", color: "#166534", fontWeight: 500 }}>1 Free country hen egg</span>
-                        <span style={{ marginLeft: "auto", fontSize: "13px", color: "#166534", fontWeight: 600 }}>FREE</span>
+
+                    {/* Free egg */}
+
+                    <div className="flex items-center gap-2 py-2.5 border-b border-[#F5EDE0] bg-transparent">
+                        <span className="text-xl">🥚</span>
+
+                        <div className="flex-1">
+                            <span className="text-sm text-[#14532D] font-semibold">
+                                Free Country Hen Egg
+                            </span>
+
+                            <p className="m-0 text-[11px] font-['Tiro_Tamil'] text-[#16A34A]">
+                                இலவச நாட்டுக்கோழி முட்டை
+                            </p>
+                        </div>
+
+                        <span className="text-sm text-[#14532D] font-bold bg-[#DCFCE7] px-2.5 py-0.5 rounded-full">
+                            FREE
+                        </span>
                     </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", padding: "14px 0 16px", fontWeight: 700, color: "#1A0A00", fontSize: "16px" }}>
-                        <span>Total</span><span style={{ color: "#C8410A" }}>₹{total}</span>
+
+                    {/* Halal assurance */}
+
+                    <div className="flex items-center gap-2 py-2.5 border-b border-[#F5EDE0]">
+                        <span className="text-lg">☪️</span>
+
+                        <span className="text-xs text-[#14532D] font-['Oswald'] tracking-[0.05em]">
+                            100% HALAL CERTIFIED
+                        </span>
                     </div>
-                    <button onClick={onProceed}
-                        style={{ width: "100%", background: "#C8410A", color: "#fff", border: "none", padding: "13px", borderRadius: "10px", fontSize: "15px", fontWeight: 600, cursor: "pointer" }}>
-                        Proceed to Details →
+
+                    <div className="flex justify-between py-4 pb-1 font-bold text-[#1A0800] text-lg font-['Oswald'] tracking-[0.02em]">
+                        <span>TOTAL</span>
+
+                        <span className="text-[#7C2D12]">₹{total}</span>
+                    </div>
+
+                    <p className="m-0 mb-3.5 text-[11px] text-[#78716C]">
+                        ⏱️ Cut 30 min before delivery · 🌿 Banana leaf packed
+                    </p>
+
+                    <button
+                        onClick={onProceed}
+                        className="w-full bg-[#7C2D12] text-white border-none p-3.5 rounded-xl text-[15px] font-bold cursor-pointer font-['Oswald'] tracking-[0.08em]"
+                    >
+                        PROCEED TO DETAILS →
                     </button>
                 </>
             )}
         </>
     );
+}
 
-    // ── Success screen ──────────────────────────────────────────────────
+const MEATS: Meat[] = [
+    {
+        id: "village_chicken",
+
+        emoji: "🐔",
+
+        name: "Village Chicken",
+
+        tamil: "கிராம நாட்டுக்கோழி",
+
+        subTamil: "வீட்டு வளர்ப்பு",
+
+        badge: "🌿 Home Grown",
+
+        badgeColor: "#14532D",
+
+        badgeBg: "#DCFCE7",
+
+        highlight: "Most Popular",
+
+        desc: "Raised freely in village homes — not a farm. Slower grown, darker meat, richest flavour. Best for country chicken gravy.",
+
+        pricePerKg: 700,
+
+        unit: "kg",
+
+        minQty: 0.5,
+
+        step: 0.5,
+
+        cuts: ["Whole", "Curry Cut", "Boneless", "Leg Pieces"],
+
+        image:
+            "https://images.unsplash.com/photo-1501200291289-c5a76c232e5f?q=80&w=400",
+
+        accent: "#14532D",
+    },
+
+    {
+        id: "farm_chicken",
+
+        emoji: "🐓",
+
+        name: "Farm Country Chicken",
+
+        tamil: "பண்ணை நாட்டுக்கோழி",
+
+        subTamil: "பண்ணை வளர்ப்பு",
+
+        badge: "🏡 Farm Raised",
+
+        badgeColor: "#92400E",
+
+        badgeBg: "#FEF3C7",
+
+        highlight: null,
+
+        desc: "Country breed chicken raised on a farm — same desi breed as village chicken, more available, slightly lighter taste. Great value.",
+
+        pricePerKg: 300,
+
+        unit: "kg",
+
+        minQty: 0.5,
+
+        step: 0.5,
+
+        cuts: ["Whole", "Curry Cut", "Boneless", "Leg Pieces", "Breast Pieces"],
+
+        image:
+            "https://images.unsplash.com/photo-1548550023-2bdb3c5beed7?q=80&w=400",
+
+        accent: "#92400E",
+    },
+
+    {
+        id: "broiler",
+
+        emoji: "🍗",
+
+        name: "Broiler Chicken",
+
+        tamil: "பிராய்லர் கோழி",
+
+        subTamil: "அன்றாட சமையல்",
+
+        badge: "⚡ Everyday",
+
+        badgeColor: "#1e40af",
+
+        badgeBg: "#DBEAFE",
+
+        highlight: null,
+
+        desc: "Regular white chicken from the market. Soft meat, mild taste. Good for butter chicken, fry, or daily cooking.",
+
+        pricePerKg: 250,
+
+        unit: "kg",
+
+        minQty: 1,
+
+        step: 0.5,
+
+        cuts: ["Whole", "Curry Cut", "Boneless", "Leg Pieces", "Breast Pieces"],
+
+        image:
+            "https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?q=80&w=400",
+
+        accent: "#1e40af",
+    },
+
+    {
+        id: "mutton",
+
+        emoji: "🐑",
+
+        name: "Mutton (Goat)",
+
+        tamil: "ஆட்டு இறைச்சி",
+
+        subTamil: "உள்ளூர் பண்ணை ஆடு",
+
+        badge: "⭐ Premium",
+
+        badgeColor: "#78350F",
+
+        badgeBg: "#FEF3C7",
+
+        highlight: null,
+
+        desc: "Fresh goat meat from local Nellai farms. Perfect for Tirunelveli salna, kuzhambu & biryani.",
+
+        pricePerKg: 1000,
+
+        unit: "kg",
+
+        minQty: 0.5,
+
+        step: 0.5,
+
+        cuts: ["Curry Cut", "Chops", "Ribs", "Boneless", "Leg"],
+
+        image:
+            "https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?q=80&w=400",
+
+        accent: "#78350F",
+    },
+
+    {
+        id: "quail",
+
+        emoji: "🐦",
+
+        name: "Quail (Kaada)",
+
+        tamil: "காடை",
+
+        subTamil: "நெல்லை சிறப்பு",
+
+        badge: "🔥 Nellai Special",
+
+        badgeColor: "#7C2D12",
+
+        badgeBg: "#FEE2E2",
+
+        highlight: null,
+
+        desc: "Small game bird — very tasty fried or in gravy. Whole cleaned. Minimum 2 pieces.",
+
+        pricePerKg: 140,
+
+        unit: "piece",
+
+        minQty: 2,
+
+        step: 1,
+
+        cuts: ["Whole Cleaned", "Marinated", "Half Cut"],
+
+        image:
+            "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=400",
+
+        accent: "#7C2D12",
+    },
+
+    {
+        id: "turkey",
+
+        emoji: "🦃",
+
+        name: "Turkey",
+
+        tamil: "வான்கோழி",
+
+        subTamil: "சிறப்பு நிகழ்வுகளுக்கு",
+
+        badge: null,
+
+        badgeColor: "",
+
+        badgeBg: "",
+
+        highlight: null,
+
+        desc: "Large bird, meaty & flavourful. Good for special occasions. Minimum 1 kg.",
+
+        pricePerKg: 700,
+
+        unit: "kg",
+
+        minQty: 1,
+
+        step: 0.5,
+
+        cuts: ["Whole", "Curry Cut", "Breast Pieces", "Leg"],
+
+        image:
+            "https://images.unsplash.com/photo-1574672280600-4accfa5b6f98?q=80&w=400",
+
+        accent: "#5B4A00",
+    },
+
+    {
+        id: "pigeon",
+
+        emoji: "🕊️",
+
+        name: "Pigeon (Parava)",
+
+        tamil: "புறா",
+
+        subTamil: "ஆரோக்கியமான இறைச்சி",
+
+        badge: null,
+
+        badgeColor: "",
+
+        badgeBg: "",
+
+        highlight: null,
+
+        desc: "Small bird, rich taste. Popular for health benefits. Whole cleaned. Minimum 2 pieces.",
+
+        pricePerKg: 360,
+
+        unit: "piece",
+
+        minQty: 2,
+
+        step: 1,
+
+        cuts: ["Whole Cleaned", "Marinated"],
+
+        image:
+            "https://images.unsplash.com/photo-1518492104633-130d0cc84637?q=80&w=400",
+
+        accent: "#374151",
+    },
+
+    {
+        id: "rabbit",
+
+        emoji: "🐇",
+
+        name: "Rabbit (Muyal)",
+
+        tamil: "முயல்",
+
+        subTamil: "கொழுப்பு இல்லாத இறைச்சி",
+
+        badge: null,
+
+        badgeColor: "",
+
+        badgeBg: "",
+
+        highlight: null,
+
+        desc: "Lean, tasty meat. Low fat. Great for pepper fry or curry. Minimum 1 kg.",
+
+        pricePerKg: 500,
+
+        unit: "kg",
+
+        minQty: 1,
+
+        step: 0.5,
+
+        cuts: ["Whole", "Curry Cut"],
+
+        image:
+            "https://images.unsplash.com/photo-1585110396000-c9ffd4e4b308?q=80&w=400",
+
+        accent: "#5C3317",
+    },
+];
+
+const OWNER_WHATSAPP_1 = "919025761741";
+
+const OWNER_WHATSAPP_2 = "917358873217";
+
+export default function OrderPage() {
+    const [cart, setCart] = useState<CartItem[]>([]);
+
+    const [selections, setSelections] = useState<Record<string, Selection>>(
+        Object.fromEntries(
+            MEATS.map((m) => [m.id, { qty: m.minQty, cut: m.cuts[0] }]),
+        ),
+    );
+
+    const [step, setStep] = useState<"menu" | "details" | "confirm">("menu");
+
+    const [form, setForm] = useState<FormData>({
+        name: "",
+        phone: "",
+        address: "",
+        time: "morning",
+        notes: "",
+    });
+
+    const [submitted, setSubmitted] = useState(false);
+
+    const [cartOpen, setCartOpen] = useState(false);
+
+    const [addedId, setAddedId] = useState<string | null>(null);
+
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        const check = () => setIsMobile(window.innerWidth < 768);
+
+        check();
+
+        window.addEventListener("resize", check);
+
+        return () => window.removeEventListener("resize", check);
+    }, []);
+
+    const getSel = (m: Meat): Selection =>
+        selections[m.id] ?? { qty: m.minQty, cut: m.cuts[0] };
+
+    const addToCart = (meat: Meat) => {
+        const sel = getSel(meat);
+
+        const subtotal = parseFloat((sel.qty * meat.pricePerKg).toFixed(0));
+
+        setCart((prev) => {
+            const existing = prev.find((c) => c.id === meat.id && c.cut === sel.cut);
+
+            if (existing) {
+                return prev.map((c) =>
+                    c.id === meat.id && c.cut === sel.cut
+                        ? {
+                            ...c,
+                            qty: parseFloat((c.qty + sel.qty).toFixed(1)),
+                            subtotal: c.subtotal + subtotal,
+                        }
+                        : c,
+                );
+            }
+
+            return [
+                ...prev,
+                {
+                    id: meat.id,
+                    name: meat.name,
+                    emoji: meat.emoji,
+                    qty: sel.qty,
+                    unit: meat.unit,
+                    cut: sel.cut,
+                    price: meat.pricePerKg,
+                    subtotal,
+                },
+            ];
+        });
+
+        setAddedId(meat.id);
+
+        setTimeout(() => setAddedId(null), 1200);
+
+        if (isMobile) setCartOpen(true);
+    };
+
+    const removeFromCart = (idx: number) =>
+        setCart((c) => c.filter((_, i) => i !== idx));
+
+    const total = cart.reduce((s, c) => s + c.subtotal, 0);
+
+    const timeLabel =
+        form.time === "morning"
+            ? "Morning (7–12 PM)"
+            : form.time === "afternoon"
+                ? "Afternoon (12–5 PM)"
+                : "Evening (5–8 PM)";
+
+    const sendWhatsApp = () => {
+        const itemLines = cart
+            .map(
+                (item) =>
+                    `  ${item.emoji} ${item.name} — ${item.qty} ${item.unit} (${item.cut}) = ₹${item.subtotal}`,
+            )
+            .join("\n");
+
+        const message = [
+            "☪️ *NEW ORDER — NaattuKadai* 🥩",
+
+            "━━━━━━━━━━━━━━━━━━━━━━━",
+
+            "*100% HALAL | No Refrigeration | Banana Leaf Packed*",
+
+            "",
+
+            "*🛒 Items:*",
+
+            itemLines,
+
+            "🥚 FREE country hen egg included",
+
+            "━━━━━━━━━━━━━━━━━━━━━━━",
+
+            `💰 *Total: ₹${total}*`,
+
+            "",
+
+            "📦 *Delivery Details:*",
+
+            `👤 Name: ${form.name}`,
+
+            `📞 Phone: ${form.phone}`,
+
+            `🏠 Address: ${form.address}`,
+
+            `⏰ Time: ${timeLabel}`,
+
+            `⏱️ Note: Meat will be cut 30 minutes before delivery`,
+
+            ...(form.notes ? [`📝 Notes: ${form.notes}`] : []),
+
+            "━━━━━━━━━━━━━━━━━━━━━━━",
+
+            "💳 Payment: Cash on Delivery",
+        ].join("\n");
+
+        const encoded = encodeURIComponent(message);
+
+        window.open(`https://wa.me/${OWNER_WHATSAPP_1}?text=${encoded}`, "_blank");
+
+        setTimeout(
+            () =>
+                window.open(
+                    `https://wa.me/${OWNER_WHATSAPP_2}?text=${encoded}`,
+                    "_blank",
+                ),
+            500,
+        );
+    };
+
+    const handleConfirm = () => {
+        sendWhatsApp();
+        setSubmitted(true);
+    };
+
+    // SUCCESS SCREEN
+
     if (submitted) {
         return (
-            <div style={{ minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem" }}>
-                <div style={{ textAlign: "center", maxWidth: "480px", width: "100%" }}>
-                    <div style={{ fontSize: "64px", marginBottom: "16px" }}>✅</div>
-                    <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: "28px", color: "#1A0A00", margin: "0 0 12px" }}>Order Sent!</h1>
-                    <p style={{ color: "#5A4030", fontSize: "15px", lineHeight: 1.7, marginBottom: "8px" }}>
-                        Your order was sent on WhatsApp. We'll call <strong>{form.phone}</strong> to confirm.
+            <div className="font-serif min-h-[70vh] flex items-center justify-center p-8 bg-[#FBF7F0]">
+                <div className="text-center max-w-md w-full">
+                    <div className="w-22.5 h-22.5 bg-[#DCFCE7] rounded-full flex items-center justify-center text-5xl mx-auto mb-6">
+                        ✅
+                    </div>
+
+                    <h1 className="font-['Oswald'] text-4xl text-[#1A0800] m-0 mb-2 tracking-[0.05em]">
+                        ORDER SENT!
+                    </h1>
+
+                    <p className="font-['Tiro_Tamil'] text-[#C8410A] mb-4">
+                        உங்கள் ஆர்டர் அனுப்பப்பட்டது
                     </p>
-                    <p style={{ color: "#7A5C42", fontSize: "13px", marginBottom: "12px" }}>WhatsApp didn't open?</p>
-                    <button onClick={sendWhatsApp} style={{ background: "#25D366", color: "#fff", border: "none", padding: "12px 28px", borderRadius: "10px", fontSize: "14px", fontWeight: 600, cursor: "pointer", marginBottom: "28px" }}>
-                        📲 Re-send on WhatsApp
-                    </button>
-                    <div style={{ background: "#FFF8F2", border: "1px solid #EDE0D0", borderRadius: "12px", padding: "20px", marginBottom: "20px", textAlign: "left" }}>
+
+                    <p className="text-gray-700 text-base leading-relaxed mb-6">
+                        Sent on WhatsApp. We'll call{" "}
+                        <strong className="text-[#1A0800]">{form.phone}</strong> to confirm
+                        your order.
+                    </p>
+
+                    <div className="bg-white border border-[#E8D8C0] rounded-3xl p-5 mb-5 text-left">
                         {cart.map((item, i) => (
-                            <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid #F0E4D0", fontSize: "14px", color: "#3A2010" }}>
-                                <span>{item.emoji} {item.name} — {item.qty}{item.unit} ({item.cut})</span>
-                                <span style={{ fontWeight: 600 }}>₹{item.subtotal}</span>
+                            <div
+                                key={i}
+                                className="flex justify-between py-2 border-b border-[#F5EDE0] text-sm text-[#3A2010] font-['Oswald'] tracking-[0.02em]"
+                            >
+                                <span>
+                                    {item.emoji} {item.name} · {item.qty}
+                                    {item.unit} · {item.cut}
+                                </span>
+
+                                <span className="font-bold">₹{item.subtotal}</span>
                             </div>
                         ))}
-                        <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid #F0E4D0", fontSize: "14px", color: "#166534" }}>
-                            <span>🥚 Free country hen egg</span><span style={{ fontWeight: 600 }}>FREE</span>
+
+                        <div className="flex justify-between py-2 border-b border-[#F5EDE0] text-sm text-[#14532D]">
+                            <span>🥚 Free country hen egg</span>
+                            <span className="font-bold">FREE</span>
                         </div>
-                        <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, color: "#C8410A", paddingTop: "12px", fontSize: "15px" }}>
-                            <span>Total</span><span>₹{total}</span>
+
+                        <div className="flex justify-between font-['Oswald'] text-2xl text-[#7C2D12] pt-3">
+                            <span>TOTAL</span>
+                            <span>₹{total}</span>
                         </div>
                     </div>
-                    <button onClick={() => { setCart([]); setStep("menu"); setSubmitted(false); setForm({ name: "", phone: "", address: "", time: "morning", notes: "" }); }}
-                        style={{ background: "#C8410A", color: "#fff", border: "none", padding: "14px 32px", borderRadius: "10px", fontSize: "15px", fontWeight: 600, cursor: "pointer" }}>
-                        Place Another Order
+
+                    <button
+                        onClick={sendWhatsApp}
+                        className="bg-[#25D366] text-white border-none py-3.5 px-8 rounded-xl text-sm font-bold cursor-pointer mb-3 w-full font-['Oswald'] tracking-[0.08em]"
+                    >
+                        📲 RE-SEND ON WHATSAPP
+                    </button>
+
+                    <button
+                        onClick={() => {
+                            setCart([]);
+                            setStep("menu");
+                            setSubmitted(false);
+                            setForm({
+                                name: "",
+                                phone: "",
+                                address: "",
+                                time: "morning",
+                                notes: "",
+                            });
+                        }}
+                        className="bg-[#7C2D12] text-white border-none py-3.5 px-8 rounded-xl text-sm font-bold cursor-pointer w-full font-['Oswald'] tracking-[0.08em]"
+                    >
+                        + PLACE ANOTHER ORDER
                     </button>
                 </div>
             </div>
@@ -284,268 +722,802 @@ export default function OrderPage() {
     }
 
     return (
-        <div style={{ fontFamily: "'DM Sans', sans-serif" }}>
-            <style>{`
-        @media (max-width: 767px) {
-          .order-grid { display: block !important; }
-          .desktop-cart { display: none !important; }
-          .step-label { display: none !important; }
-          .detail-grid { grid-template-columns: 1fr !important; }
-        }
-        @media (min-width: 768px) {
-          .mobile-fab { display: none !important; }
-          .mobile-sheet-overlay { display: none !important; }
-        }
-      `}</style>
+        <div className="font-['Lora'] bg-[#FBF7F0] min-h-screen">
+            {/* ANNOUNCEMENT TICKER */}
 
-            {/* ── FREE EGG OFFER BANNER ──────────────────────────────────── */}
-            <div style={{
-                background: "linear-gradient(90deg, #14532D 0%, #166534 100%)",
-                padding: "14px 20px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "12px",
-                flexWrap: "wrap",
-            }}>
-                <span style={{ fontSize: "28px" }}>🥚</span>
-                <div>
-                    <p style={{ margin: 0, color: "#fff", fontWeight: 700, fontSize: "15px" }}>
-                        FREE Country Hen Egg with Every Order!
-                    </p>
-                    <p style={{ margin: 0, color: "#86EFAC", fontSize: "13px" }}>
-                        Fresh desi egg — நாட்டுக்கோழி முட்டை — included free with every delivery.
-                    </p>
+            <div className="bg-[#14532D] text-[#BBF7D0] py-2.5 text-xs font-['Oswald'] tracking-[0.06em] overflow-hidden whitespace-nowrap">
+                <div className="inline-flex animate-[ticker_30s_linear_infinite]">
+                    {[...Array(2)].map((_, r) => (
+                        <span
+                            key={r}
+                            style={{
+                                display: "inline-flex",
+                                gap: "50px",
+                                paddingRight: "50px",
+                            }}
+                        >
+                            <span>☪️ 100% HALAL CERTIFIED</span>
+
+                            <span>⏱️ டெலிவரிக்கு 30 நிமிடம் முன் வதிக்கப்படுகிறது</span>
+
+                            <span>🥚 FREE COUNTRY HEN EGG WITH EVERY ORDER</span>
+
+                            <span>🚫❄️ ZERO REFRIGERATION — EVER</span>
+
+                            <span>🌿 வாழை இலை சுற்றி — BANANA LEAF PACKED</span>
+                        </span>
+                    ))}
                 </div>
-                <span style={{ background: "#DCFCE7", color: "#166534", fontSize: "12px", fontWeight: 700, padding: "4px 12px", borderRadius: "20px", whiteSpace: "nowrap" }}>
-                    Limited Daily!
-                </span>
             </div>
 
-            <div style={{ maxWidth: "1000px", margin: "0 auto", padding: "28px 1rem 120px" }}>
+            {/* PAGE HEADER */}
+            <div className="bg-[#1A0800] border-b-[3px] border-b-[#C8410A] px-4 md:px-10 pt-8 pb-7">
+                <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
+                    <p
+                        style={{
+                            fontFamily: "'Tiro Tamil', serif",
+                            color: "#FCA5A5",
+                            fontSize: "14px",
+                            marginBottom: "6px",
+                        }}
+                    >
+                        இன்றே ஆர்டர் செய்யுங்கள்
+                    </p>
 
-                {/* Progress steps */}
-                <div style={{ display: "flex", gap: "6px", alignItems: "center", marginBottom: "32px" }}>
-                    {(["menu", "details", "confirm"] as const).map((s, i) => {
-                        const si = ["menu", "details", "confirm"].indexOf(step);
-                        return (
-                            <div key={s} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                                {i > 0 && <div style={{ width: "24px", height: "1px", background: si >= i ? "#C8410A" : "#EDE0D0" }} />}
-                                <div style={{ width: "30px", height: "30px", borderRadius: "50%", flexShrink: 0, background: step === s ? "#C8410A" : si > i ? "#FFF0E8" : "#F5EDE0", border: `2px solid ${step === s || si > i ? "#C8410A" : "#EDE0D0"}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: 700, color: step === s ? "#fff" : "#C8410A" }}>
-                                    {si > i ? "✓" : i + 1}
-                                </div>
-                                <span className="step-label" style={{ fontSize: "13px", fontWeight: 500, color: step === s ? "#1A0A00" : "#A07850" }}>
-                                    {s === "menu" ? "Choose Meats" : s === "details" ? "Your Details" : "Confirm"}
+                    <div
+                        style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "flex-end",
+                            flexWrap: "wrap",
+                            gap: "16px",
+                        }}
+                    >
+                        <h1
+                            style={{
+                                fontFamily: "'Oswald', sans-serif",
+                                fontSize: "clamp(32px, 5vw, 48px)",
+                                color: "#FBF7F0",
+                                letterSpacing: "-0.01em",
+                                lineHeight: 1,
+                            }}
+                        >
+                            PLACE YOUR ORDER
+                        </h1>
+
+                        <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+                            <div
+                                style={{
+                                    background: "#1A3A2A",
+                                    border: "1px solid #16A34A",
+                                    borderRadius: "8px",
+                                    padding: "8px 16px",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "8px",
+                                }}
+                            >
+                                <span style={{ fontSize: "16px" }}>☪️</span>
+
+                                <span
+                                    style={{
+                                        fontFamily: "'Oswald', sans-serif",
+                                        fontSize: "13px",
+                                        color: "#86EFAC",
+                                        letterSpacing: "0.08em",
+                                    }}
+                                >
+                                    HALAL
                                 </span>
                             </div>
-                        );
-                    })}
+
+                            <div
+                                style={{
+                                    background: "rgba(255,255,255,0.08)",
+                                    border: "1px solid rgba(255,255,255,0.15)",
+                                    borderRadius: "8px",
+                                    padding: "8px 16px",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "8px",
+                                }}
+                            >
+                                <span
+                                    style={{
+                                        width: "8px",
+                                        height: "8px",
+                                        background: "#22C55E",
+                                        borderRadius: "50%",
+                                        display: "inline-block",
+                                        animation: "pulse-dot 1.5s infinite",
+                                    }}
+                                ></span>
+
+                                <span
+                                    style={{
+                                        fontFamily: "'Oswald', sans-serif",
+                                        fontSize: "13px",
+                                        color: "#FBF7F0",
+                                        letterSpacing: "0.08em",
+                                    }}
+                                >
+                                    LIVE ORDERS OPEN
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Progress Steps */}
+
+                    <div
+                        style={{
+                            display: "flex",
+                            gap: "8px",
+                            alignItems: "center",
+                            marginTop: "24px",
+                        }}
+                    >
+                        {["menu", "details", "confirm"].map((s, i) => {
+                            const si = ["menu", "details", "confirm"].indexOf(step);
+
+                            const isActive = step === s;
+
+                            const isDone = si > i;
+
+                            return (
+                                <div
+                                    key={s}
+                                    style={{ display: "flex", alignItems: "center", gap: "8px" }}
+                                >
+                                    {i > 0 && (
+                                        <div
+                                            style={{
+                                                width: "32px",
+                                                height: "2px",
+                                                background: isDone
+                                                    ? "#C8410A"
+                                                    : "rgba(255,255,255,0.2)",
+                                                borderRadius: "2px",
+                                                transition: "background 0.4s",
+                                            }}
+                                        />
+                                    )}
+
+                                    <div
+                                        className="step-dot"
+                                        style={{
+                                            width: "32px",
+                                            height: "32px",
+                                            borderRadius: "50%",
+                                            flexShrink: 0,
+                                            background: isActive
+                                                ? "#C8410A"
+                                                : isDone
+                                                    ? "#7C2D12"
+                                                    : "rgba(255,255,255,0.08)",
+                                            border: `2px solid ${isActive || isDone ? "#C8410A" : "rgba(255,255,255,0.2)"}`,
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            fontSize: "13px",
+                                            fontWeight: 700,
+                                            color: isActive
+                                                ? "#fff"
+                                                : isDone
+                                                    ? "#FCA5A5"
+                                                    : "rgba(255,255,255,0.4)",
+                                            fontFamily: "'Oswald', sans-serif",
+                                        }}
+                                    >
+                                        {isDone ? "✓" : i + 1}
+                                    </div>
+
+                                    <span
+                                        className="step-label"
+                                        style={{
+                                            fontSize: "12px",
+                                            fontFamily: "'Oswald', sans-serif",
+                                            letterSpacing: "0.08em",
+                                            color: isActive ? "#FBF7F0" : "rgba(255,255,255,0.4)",
+                                        }}
+                                    >
+                                        {s === "menu"
+                                            ? "CHOOSE MEATS"
+                                            : s === "details"
+                                                ? "YOUR DETAILS"
+                                                : "CONFIRM"}
+                                    </span>
+                                </div>
+                            );
+                        })}
+                    </div>
                 </div>
+            </div>
 
-                {/* ── STEP 1: CHOOSE MEATS ─────────────────────────────────── */}
+            {/* FREE EGG BANNER */}
+
+            <div
+                style={{
+                    background: "#FEF9C3",
+                    borderBottom: "2px dashed #CA8A04",
+                    padding: "12px 40px",
+                }}
+            >
+                <div
+                    style={{
+                        maxWidth: "1100px",
+                        margin: "0 auto",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "14px",
+                        flexWrap: "wrap",
+                    }}
+                >
+                    <span style={{ fontSize: "28px" }}>🥚</span>
+
+                    <p
+                        style={{
+                            fontFamily: "'Oswald', sans-serif",
+                            fontSize: "16px",
+                            color: "#713F12",
+                            letterSpacing: "0.05em",
+                        }}
+                    >
+                        FREE COUNTRY HEN EGG WITH EVERY ORDER!
+                    </p>
+
+                    <span
+                        style={{
+                            fontFamily: "'Tiro Tamil', serif",
+                            fontSize: "13px",
+                            color: "#92400E",
+                        }}
+                    >
+                        · ஒவ்வொரு ஆர்டருடனும் இலவச முட்டை
+                    </span>
+                </div>
+            </div>
+
+            <div
+                style={{
+                    maxWidth: "1100px",
+                    margin: "0 auto",
+                    padding: "32px 24px 140px",
+                }}
+            >
+                {/* ── STEP 1: MENU ───────────────────────────────────────── */}
+
                 {step === "menu" && (
-                    <div className="order-grid" style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: "28px", alignItems: "start" }}>
+                    <div
+                        className="order-grid"
+                        style={{
+                            display: "grid",
+                            gridTemplateColumns: "1fr 320px",
+                            gap: "32px",
+                            alignItems: "start",
+                        }}
+                    >
+                        {/* Meat Cards */}
 
-                        {/* Meat cards */}
                         <div>
-                            <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: "26px", color: "#1A0A00", margin: "0 0 6px" }}>Choose Your Meat</h2>
-                            <p style={{ color: "#7A5C42", fontSize: "14px", margin: "0 0 20px" }}>All meat is freshly slaughtered on order day — no frozen stock.</p>
+                            <div style={{ marginBottom: "24px" }}>
+                                <h2 className="font-['Oswald'] text-[28px] text-[#1A0800] tracking-[0.02em] mb-1">
+                                    CHOOSE YOUR MEAT
+                                </h2>
 
-                            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                                {MEATS.map((m) => (
-                                    <div key={m.id} style={{ background: "#fff", border: "1px solid #EDE0D0", borderRadius: "14px", padding: "20px", position: "relative" }}>
+                                <p className="font-['Tiro_Tamil'] text-[#78716C] text-sm">
+                                    உங்கள் இறைச்சியை தேர்வு செய்யுங்கள் · All freshly cut 30 min
+                                    before delivery · ☪️ 100% Halal
+                                </p>
+                            </div>
 
-                                        {/* Badge */}
-                                        {m.badge && (
-                                            <span style={{ display: "inline-block", background: m.badgeBg, color: m.badgeColor, fontSize: "11px", fontWeight: 700, padding: "3px 10px", borderRadius: "20px", marginBottom: "10px" }}>
-                                                {m.badge}
-                                            </span>
-                                        )}
+                            <div
+                                style={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    gap: "20px",
+                                }}
+                            >
+                                {MEATS.map((m) => {
+                                    const sel = getSel(m);
 
-                                        <div style={{ display: "flex", gap: "14px", alignItems: "flex-start", marginBottom: "14px" }}>
-                                            <span style={{ fontSize: "36px", flexShrink: 0 }}>{m.emoji}</span>
-                                            <div style={{ flex: 1, minWidth: 0 }}>
-                                                <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: "18px", color: "#1A0A00", margin: "0 0 2px" }}>{m.name}</h3>
-                                                <p style={{ color: "#A07850", fontSize: "12px", margin: "0 0 6px" }}>{m.tamil}</p>
-                                                <p style={{ color: "#5A4030", fontSize: "13px", lineHeight: 1.6, margin: "0 0 8px" }}>{m.desc}</p>
-                                                <span style={{ color: "#C8410A", fontWeight: 700, fontSize: "16px" }}>₹{m.pricePerKg} / {m.unit}</span>
-                                            </div>
-                                        </div>
+                                    const isAdded = addedId === m.id;
 
-                                        {/* Controls */}
-                                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "12px" }}>
-                                            <div>
-                                                <label style={{ display: "block", fontSize: "11px", color: "#7A5C42", marginBottom: "5px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                                                    Quantity ({m.unit})
-                                                </label>
-                                                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                    return (
+                                        <div
+                                            key={m.id}
+                                            className={`meat-card${isAdded ? " just-added" : ""} bg-white border border-[#E8D8C0] rounded-xl overflow-hidden shadow-[0_4px_16px_rgba(0,0,0,0.05)] relative`}
+                                        >
+                                            {/* Top colored accent strip */}
+
+                                            <div
+                                                style={{
+                                                    height: "4px",
+                                                    background: m.accent || "#C8410A",
+                                                }}
+                                            />
+
+                                            <div className="p-6">
+                                                {/* Header row */}
+
+                                                <div className="flex gap-4 items-start mb-3.5">
+                                                    {/* Emoji + name block */}
+
+                                                    <div className="w-16 h-16 rounded-xl bg-[#F5EDE0] flex items-center justify-center text-3xl flex-shrink-0">
+                                                        {m.emoji}
+                                                    </div>
+
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                                                            <h3 className="font-['Oswald'] text-xl text-[#1A0800] tracking-[0.03em]">
+                                                                {m.name}
+                                                            </h3>
+
+                                                            {m.highlight && (
+                                                                <span className="bg-[#C8410A] text-white text-xs px-2.5 py-0.5 rounded-full font-['Oswald'] tracking-[0.08em]">
+                                                                    ★ {m.highlight}
+                                                                </span>
+                                                            )}
+                                                        </div>
+
+                                                        <p className="font-['Tiro_Tamil'] text-[#C8410A] text-sm mb-0.5">
+                                                            {m.tamil}
+                                                        </p>
+
+                                                        <p className="font-['Tiro_Tamil'] text-[#A8A29E] text-[11px]">
+                                                            {m.subTamil}
+                                                        </p>
+                                                    </div>
+
+                                                    {/* Price */}
+
+                                                    <div className="text-right flex-shrink-0">
+                                                        <div className="font-['Oswald'] text-2xl text-[#7C2D12] leading-none">
+                                                            ₹{m.pricePerKg}
+                                                        </div>
+
+                                                        <div className="text-xs text-[#A8A29E]">
+                                                            per {m.unit}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Description */}
+
+                                                <p className="text-[#57534E] text-sm leading-relaxed mb-4">
+                                                    {m.desc}
+                                                </p>
+
+                                                {/* Badges row */}
+
+                                                <div className="flex gap-1.5 flex-wrap mb-4">
+                                                    {m.badge && (
+                                                        <span
+                                                            style={{
+                                                                background: m.badgeBg,
+                                                                color: m.badgeColor,
+                                                                fontSize: "11px",
+                                                                fontWeight: 700,
+                                                                padding: "4px 12px",
+                                                                borderRadius: "20px",
+                                                            }}
+                                                        >
+                                                            {m.badge}
+                                                        </span>
+                                                    )}
+
+                                                    <span className="bg-[#F0FDF4] text-[#14532D] text-[11px] font-bold px-3 py-1 rounded-full font-['Oswald'] tracking-[0.05em]">
+                                                        ☪️ HALAL
+                                                    </span>
+
+                                                    <span className="bg-[#FEF2F2] text-[#7C2D12] text-[11px] font-bold px-3 py-1 rounded-full font-['Oswald'] tracking-[0.05em]">
+                                                        ⏱️ CUT TO ORDER
+                                                    </span>
+                                                </div>
+
+                                                {/* Controls */}
+
+                                                <div className="grid grid-cols-[1fr_1fr_auto] gap-2.5 items-end">
+                                                    {/* Quantity */}
+
+                                                    <div>
+                                                        <label className="block text-[11px] text-[#78716C] mb-1.5 font-['Oswald'] tracking-[0.08em]">
+                                                            QTY ({m.unit.toUpperCase()})
+                                                        </label>
+
+                                                        <div className="flex items-center gap-1.5">
+                                                            <button
+                                                                className="qty-btn w-9 h-9 rounded-lg border-2 border-[#E8D8C0] bg-[#FAF7F2] cursor-pointer text-lg text-[#5A3520] flex items-center justify-center font-bold"
+                                                                onClick={() =>
+                                                                    setSelections((s) => ({
+                                                                        ...s,
+                                                                        [m.id]: {
+                                                                            ...s[m.id],
+                                                                            qty: Math.max(
+                                                                                m.minQty,
+                                                                                parseFloat(
+                                                                                    (
+                                                                                        (s[m.id]?.qty ?? m.minQty) - m.step
+                                                                                    ).toFixed(1),
+                                                                                ),
+                                                                            ),
+                                                                        },
+                                                                    }))
+                                                                }
+                                                            >
+                                                                −
+                                                            </button>
+
+                                                            <span className="min-w-10 text-center font-['Oswald'] font-bold text-[#1A0800] text-[17px]">
+                                                                {sel.qty}
+                                                            </span>
+
+                                                            <button
+                                                                className="qty-btn w-9 h-9 rounded-lg border-2 border-[#E8D8C0] bg-[#FAF7F2] cursor-pointer text-lg text-[#5A3520] flex items-center justify-center font-bold"
+                                                                onClick={() =>
+                                                                    setSelections((s) => ({
+                                                                        ...s,
+                                                                        [m.id]: {
+                                                                            ...s[m.id],
+                                                                            qty: parseFloat(
+                                                                                (
+                                                                                    (s[m.id]?.qty ?? m.minQty) + m.step
+                                                                                ).toFixed(1),
+                                                                            ),
+                                                                        },
+                                                                    }))
+                                                                }
+                                                            >
+                                                                +
+                                                            </button>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Cut */}
+
+                                                    <div>
+                                                        <label className="block text-[11px] text-[#78716C] mb-1.5 font-['Oswald'] tracking-[0.08em]">
+                                                            CUT TYPE
+                                                        </label>
+
+                                                        <select
+                                                            value={sel.cut}
+                                                            onChange={(e) =>
+                                                                setSelections((s) => ({
+                                                                    ...s,
+                                                                    [m.id]: { ...s[m.id], cut: e.target.value },
+                                                                }))
+                                                            }
+                                                            className="w-full px-2.5 py-2 rounded-lg border-2 border-[#E8D8C0] bg-[#FAF7F2] text-sm text-[#1A0800] h-9 font-['Lora']"
+                                                        >
+                                                            {m.cuts.map((c) => (
+                                                                <option key={c}>{c}</option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+
+                                                    {/* Add button */}
+
                                                     <button
-                                                        onClick={() => setSelections((s) => ({ ...s, [m.id]: { ...(s[m.id] ?? { qty: m.minQty, cut: m.cuts[0] }), qty: Math.max(m.minQty, parseFloat(((s[m.id]?.qty ?? m.minQty) - m.step).toFixed(1))) } }))}
-                                                        style={{ width: "34px", height: "34px", borderRadius: "8px", border: "1px solid #EDE0D0", background: "#FAF7F2", cursor: "pointer", fontSize: "18px", color: "#5A3520", display: "flex", alignItems: "center", justifyContent: "center" }}>−</button>
-                                                    <span style={{ minWidth: "36px", textAlign: "center", fontWeight: 600, color: "#1A0A00", fontSize: "15px" }}>{getSel(m).qty}</span>
-                                                    <button
-                                                        onClick={() => setSelections((s) => ({ ...s, [m.id]: { ...(s[m.id] ?? { qty: m.minQty, cut: m.cuts[0] }), qty: parseFloat(((s[m.id]?.qty ?? m.minQty) + m.step).toFixed(1)) } }))}
-                                                        style={{ width: "34px", height: "34px", borderRadius: "8px", border: "1px solid #EDE0D0", background: "#FAF7F2", cursor: "pointer", fontSize: "18px", color: "#5A3520", display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
+                                                        className={`add-btn h-9 px-5 ${isAdded ? "bg-[#14532D]" : "bg-[#7C2D12]"} text-white border-none rounded-lg text-sm font-bold cursor-pointer whitespace-nowrap font-['Oswald'] tracking-[0.06em] flex items-center gap-1.5 transition-colors duration-300`}
+                                                        onClick={() => addToCart(m)}
+                                                    >
+                                                        {isAdded
+                                                            ? "✓ ADDED"
+                                                            : `+ ADD · ₹${(sel.qty * m.pricePerKg).toFixed(0)}`}
+                                                    </button>
                                                 </div>
                                             </div>
-                                            <div>
-                                                <label style={{ display: "block", fontSize: "11px", color: "#7A5C42", marginBottom: "5px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                                                    Cut Type
-                                                </label>
-                                                <select
-                                                    value={getSel(m).cut}
-                                                    onChange={(e) => setSelections((s) => ({ ...s, [m.id]: { ...(s[m.id] ?? { qty: m.minQty, cut: m.cuts[0] }), cut: e.target.value } }))}
-                                                    style={{ width: "100%", padding: "8px 10px", borderRadius: "8px", border: "1px solid #EDE0D0", background: "#FAF7F2", fontSize: "13px", color: "#3A2010", height: "34px" }}>
-                                                    {m.cuts.map((c) => <option key={c}>{c}</option>)}
-                                                </select>
-                                            </div>
                                         </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
 
-                                        <button onClick={() => addToCart(m)}
-                                            style={{ width: "100%", background: "#C8410A", color: "#fff", border: "none", padding: "11px", borderRadius: "8px", fontSize: "14px", fontWeight: 600, cursor: "pointer" }}>
-                                            + Add — ₹{(getSel(m).qty * m.pricePerKg).toFixed(0)}
-                                        </button>
+                        {/* Desktop Cart Sidebar */}
+                        <div className="desktop-cart sticky top-5">
+                            <div className="bg-white border border-[#E8D8C0] rounded-xl p-6 shadow-[0_8px_32px_rgba(0,0,0,0.07)]">
+                                <div className="flex justify-between items-center mb-5 pb-4 border-b-2 border-[#F5EDE0]">
+                                    <h3 className="font-['Oswald'] text-xl text-[#1A0800] tracking-[0.03em]">
+                                        🛒 YOUR ORDER
+                                    </h3>
+                                    {cart.length > 0 && (
+                                        <span className="bg-[#7C2D12] text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-['Oswald'] font-bold">
+                                            {cart.length}
+                                        </span>
+                                    )}
+                                </div>
+
+                                <CartContents
+                                    cart={cart}
+                                    removeFromCart={removeFromCart}
+                                    total={total}
+                                    onProceed={() => setStep("details")}
+                                />
+                            </div>
+
+                            {/* Guarantees below cart */}
+                            <div className="mt-4 bg-[#1A0800] rounded-xl p-[18px_20px]">
+                                <p className="font-['Oswald'] text-xs text-[#FCA5A5] tracking-[0.1em] mb-3">
+                                    OUR PROMISE
+                                </p>
+                                {[
+                                    ["☪️", "100% Halal Certified"],
+                                    ["⏱️", "Cut 30 min before delivery"],
+                                    ["🚫❄️", "Zero refrigeration"],
+                                    ["🌿", "Banana leaf wrapped"],
+                                    ["🥚", "Free country hen egg"],
+                                ].map(([icon, text]) => (
+                                    <div key={text} className="flex items-center gap-2 py-1.5">
+                                        <span className="text-[#FCA5A5] w-6 text-center">
+                                            {icon}
+                                        </span>
+                                        <span className="text-[#FBF7F0] text-sm">{text}</span>
                                     </div>
                                 ))}
                             </div>
                         </div>
-
-                        {/* Desktop cart sidebar */}
-                        <div className="desktop-cart" style={{ position: "sticky", top: "84px" }}>
-                            <div style={{ background: "#fff", border: "1px solid #EDE0D0", borderRadius: "14px", padding: "24px" }}>
-                                <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: "20px", color: "#1A0A00", margin: "0 0 16px" }}>🛒 Your Order</h3>
-                                <CartContents onProceed={() => setStep("details")} />
-                            </div>
-                        </div>
                     </div>
                 )}
 
-                {/* ── STEP 2: DETAILS ──────────────────────────────────────── */}
+                {/* ── STEP 2: DETAILS ─────────────────────────────────────── */}
                 {step === "details" && (
-                    <div style={{ maxWidth: "520px" }}>
-                        <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: "26px", color: "#1A0A00", margin: "0 0 6px" }}>Delivery Details</h2>
-                        <p style={{ color: "#7A5C42", fontSize: "14px", marginBottom: "24px" }}>We'll call to confirm before dispatching.</p>
+                    <div className="grid gap-6 md:grid-cols-[1fr_360px] items-start">
+                        <div className="bg-white border border-[#E8D8C0] rounded-2xl p-6 shadow-[0_8px_32px_rgba(0,0,0,0.06)]">
+                            <h2 className="font-['Oswald'] text-2xl text-[#1A0800] tracking-[0.03em] mb-1">
+                                YOUR DELIVERY DETAILS
+                            </h2>
+                            <p className="font-['Tiro_Tamil'] text-[#78716C] text-sm mb-5">
+                                உங்கள் விவரங்களை உள்ளிடுங்கள் · Cash on Delivery
+                            </p>
 
-                        {[
-                            { id: "name", label: "Full Name", placeholder: "Your name", type: "text" },
-                            { id: "phone", label: "Phone Number", placeholder: "+91 XXXXX XXXXX", type: "tel" },
-                            { id: "address", label: "Delivery Address", placeholder: "Street, area — Tirunelveli", type: "text" },
-                        ].map((f) => (
-                            <div key={f.id} style={{ marginBottom: "18px" }}>
-                                <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#5A3520", marginBottom: "7px" }}>{f.label}</label>
-                                <input type={f.type} placeholder={f.placeholder} value={(form as any)[f.id]}
-                                    onChange={(e) => setForm((prev) => ({ ...prev, [f.id]: e.target.value }))}
-                                    style={{ width: "100%", padding: "12px 14px", borderRadius: "10px", border: "1px solid #EDE0D0", background: "#FAF7F2", fontSize: "14px", color: "#1A0A00", boxSizing: "border-box" }} />
+                            <div className="grid gap-4">
+                                <div>
+                                    <label className="block text-[11px] text-[#78716C] mb-1.5 font-['Oswald'] tracking-[0.08em]">
+                                        NAME
+                                    </label>
+                                    <input
+                                        value={form.name}
+                                        onChange={(e) =>
+                                            setForm((f) => ({ ...f, name: e.target.value }))
+                                        }
+                                        className="w-full px-3 py-2.5 rounded-xl border-2 border-[#E8D8C0] bg-[#FAF7F2] text-sm text-[#1A0800] font-['Lora']"
+                                        placeholder="Your name"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-[11px] text-[#78716C] mb-1.5 font-['Oswald'] tracking-[0.08em]">
+                                        PHONE
+                                    </label>
+                                    <input
+                                        value={form.phone}
+                                        onChange={(e) =>
+                                            setForm((f) => ({
+                                                ...f,
+                                                phone: e.target.value.replace(/[^\d+]/g, ""),
+                                            }))
+                                        }
+                                        className="w-full px-3 py-2.5 rounded-xl border-2 border-[#E8D8C0] bg-[#FAF7F2] text-sm text-[#1A0800] font-['Lora']"
+                                        placeholder="10 digit number"
+                                        inputMode="tel"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-[11px] text-[#78716C] mb-1.5 font-['Oswald'] tracking-[0.08em]">
+                                        ADDRESS
+                                    </label>
+                                    <textarea
+                                        value={form.address}
+                                        onChange={(e) =>
+                                            setForm((f) => ({ ...f, address: e.target.value }))
+                                        }
+                                        className="w-full px-3 py-2.5 rounded-xl border-2 border-[#E8D8C0] bg-[#FAF7F2] text-sm text-[#1A0800] font-['Lora'] min-h-24"
+                                        placeholder="House no, street, area, landmark"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-[11px] text-[#78716C] mb-1.5 font-['Oswald'] tracking-[0.08em]">
+                                        DELIVERY TIME
+                                    </label>
+                                    <select
+                                        value={form.time}
+                                        onChange={(e) =>
+                                            setForm((f) => ({
+                                                ...f,
+                                                time: e.target.value as FormData["time"],
+                                            }))
+                                        }
+                                        className="w-full px-3 py-2.5 rounded-xl border-2 border-[#E8D8C0] bg-[#FAF7F2] text-sm text-[#1A0800] font-['Lora']"
+                                    >
+                                        <option value="morning">Morning (7–12 PM)</option>
+                                        <option value="afternoon">Afternoon (12–5 PM)</option>
+                                        <option value="evening">Evening (5–8 PM)</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="block text-[11px] text-[#78716C] mb-1.5 font-['Oswald'] tracking-[0.08em]">
+                                        NOTES (OPTIONAL)
+                                    </label>
+                                    <textarea
+                                        value={form.notes}
+                                        onChange={(e) =>
+                                            setForm((f) => ({ ...f, notes: e.target.value }))
+                                        }
+                                        className="w-full px-3 py-2.5 rounded-xl border-2 border-[#E8D8C0] bg-[#FAF7F2] text-sm text-[#1A0800] font-['Lora'] min-h-20"
+                                        placeholder="Eg: Call before delivery"
+                                    />
+                                </div>
                             </div>
-                        ))}
 
-                        <div style={{ marginBottom: "18px" }}>
-                            <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#5A3520", marginBottom: "7px" }}>Preferred Delivery Time</label>
-                            <div className="detail-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px" }}>
-                                {[["morning", "🌅", "Morning", "7 AM – 12 PM"], ["afternoon", "☀️", "Afternoon", "12 – 5 PM"], ["evening", "🌆", "Evening", "5 – 8 PM"]].map(([val, icon, label, sub]) => (
-                                    <button key={val} onClick={() => setForm((f) => ({ ...f, time: val }))}
-                                        style={{ padding: "10px 8px", borderRadius: "10px", fontSize: "12px", fontWeight: 500, cursor: "pointer", background: form.time === val ? "#FFF0E8" : "#FAF7F2", border: `1.5px solid ${form.time === val ? "#C8410A" : "#EDE0D0"}`, color: form.time === val ? "#C8410A" : "#7A5C42", textAlign: "center" }}>
-                                        <div style={{ fontSize: "18px", marginBottom: "2px" }}>{icon}</div>
-                                        <div style={{ fontWeight: 600 }}>{label}</div>
-                                        <div style={{ fontSize: "11px", opacity: 0.8 }}>{sub}</div>
-                                    </button>
-                                ))}
+                            <div className="flex flex-col sm:flex-row gap-3 mt-6">
+                                <button
+                                    onClick={() => setStep("menu")}
+                                    className="flex-1 bg-white text-[#7C2D12] border-2 border-[#E8D8C0] py-3 rounded-xl text-sm font-bold cursor-pointer font-['Oswald'] tracking-[0.08em]"
+                                >
+                                    ← BACK TO MENU
+                                </button>
+                                <button
+                                    onClick={() => setStep("confirm")}
+                                    disabled={
+                                        cart.length === 0 ||
+                                        form.name.trim().length === 0 ||
+                                        form.address.trim().length === 0 ||
+                                        form.phone.replace(/[^\d]/g, "").length < 10
+                                    }
+                                    className="flex-1 bg-[#7C2D12] disabled:bg-[#A8A29E] disabled:cursor-not-allowed text-white border-none py-3 rounded-xl text-sm font-bold cursor-pointer font-['Oswald'] tracking-[0.08em]"
+                                >
+                                    REVIEW ORDER →
+                                </button>
                             </div>
                         </div>
 
-                        <div style={{ marginBottom: "24px" }}>
-                            <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#5A3520", marginBottom: "7px" }}>Special Instructions <span style={{ fontWeight: 400, color: "#A07850" }}>(optional)</span></label>
-                            <textarea placeholder="e.g. Extra spicy marination, remove skin, extra clean..." value={form.notes}
-                                onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} rows={3}
-                                style={{ width: "100%", padding: "12px 14px", borderRadius: "10px", border: "1px solid #EDE0D0", background: "#FAF7F2", fontSize: "14px", color: "#1A0A00", resize: "none", boxSizing: "border-box" }} />
-                        </div>
-
-                        <div style={{ display: "flex", gap: "10px" }}>
-                            <button onClick={() => setStep("menu")} style={{ flex: 1, padding: "13px", borderRadius: "10px", border: "1.5px solid #EDE0D0", background: "#FAF7F2", fontSize: "14px", fontWeight: 600, cursor: "pointer", color: "#5A3520" }}>← Back</button>
-                            <button onClick={() => { if (form.name && form.phone && form.address) setStep("confirm"); }}
-                                disabled={!form.name || !form.phone || !form.address}
-                                style={{ flex: 2, padding: "13px", borderRadius: "10px", border: "none", background: form.name && form.phone && form.address ? "#C8410A" : "#EDE0D0", color: form.name && form.phone && form.address ? "#fff" : "#A07850", fontSize: "14px", fontWeight: 600, cursor: form.name && form.phone && form.address ? "pointer" : "not-allowed" }}>
-                                Review Order →
-                            </button>
+                        <div className="bg-white border border-[#E8D8C0] rounded-2xl p-6 shadow-[0_8px_32px_rgba(0,0,0,0.06)] sticky top-5">
+                            <h3 className="font-['Oswald'] text-xl text-[#1A0800] tracking-[0.03em] mb-4">
+                                🧾 ORDER SUMMARY
+                            </h3>
+                            <CartContents
+                                cart={cart}
+                                removeFromCart={removeFromCart}
+                                total={total}
+                                onProceed={() => setStep("confirm")}
+                            />
                         </div>
                     </div>
                 )}
 
-                {/* ── STEP 3: CONFIRM ──────────────────────────────────────── */}
+                {/* ── STEP 3: CONFIRM ─────────────────────────────────────── */}
                 {step === "confirm" && (
-                    <div style={{ maxWidth: "520px" }}>
-                        <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: "26px", color: "#1A0A00", margin: "0 0 20px" }}>Confirm Your Order</h2>
+                    <div className="grid gap-6 md:grid-cols-[1fr_360px] items-start">
+                        <div className="bg-white border border-[#E8D8C0] rounded-2xl p-6 shadow-[0_8px_32px_rgba(0,0,0,0.06)]">
+                            <h2 className="font-['Oswald'] text-2xl text-[#1A0800] tracking-[0.03em] mb-1">
+                                CONFIRM & SEND
+                            </h2>
+                            <p className="text-[#78716C] text-sm mb-5">
+                                We’ll send your order on WhatsApp to the shop numbers.
+                            </p>
 
-                        <div style={{ background: "#fff", border: "1px solid #EDE0D0", borderRadius: "14px", padding: "20px", marginBottom: "16px" }}>
-                            <h4 style={{ color: "#A07850", fontSize: "11px", letterSpacing: "1px", fontWeight: 600, margin: "0 0 12px", textTransform: "uppercase" }}>Items</h4>
-                            {cart.map((item, i) => (
-                                <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: "14px", padding: "7px 0", borderBottom: "1px solid #F5EDE0", color: "#3A2010" }}>
-                                    <span>{item.emoji} {item.name} · {item.qty}{item.unit} · {item.cut}</span>
-                                    <span style={{ fontWeight: 600, flexShrink: 0, paddingLeft: "8px" }}>₹{item.subtotal}</span>
+                            <div className="bg-[#FBF7F0] border border-[#E8D8C0] rounded-2xl p-5">
+                                <p className="font-['Oswald'] text-xs text-[#78716C] tracking-[0.1em] mb-3">
+                                    DELIVERY DETAILS
+                                </p>
+                                <div className="grid gap-1.5 text-sm text-[#1A0800]">
+                                    <div>
+                                        <span className="text-[#78716C]">Name:</span>{" "}
+                                        {form.name || "—"}
+                                    </div>
+                                    <div>
+                                        <span className="text-[#78716C]">Phone:</span>{" "}
+                                        {form.phone || "—"}
+                                    </div>
+                                    <div>
+                                        <span className="text-[#78716C]">Time:</span> {timeLabel}
+                                    </div>
+                                    <div className="whitespace-pre-wrap">
+                                        <span className="text-[#78716C]">Address:</span>{" "}
+                                        {form.address || "—"}
+                                    </div>
+                                    {form.notes && (
+                                        <div className="whitespace-pre-wrap">
+                                            <span className="text-[#78716C]">Notes:</span>{" "}
+                                            {form.notes}
+                                        </div>
+                                    )}
                                 </div>
-                            ))}
-                            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "14px", padding: "7px 0", borderBottom: "1px solid #F5EDE0", color: "#166534" }}>
-                                <span>🥚 Free country hen egg</span>
-                                <span style={{ fontWeight: 600 }}>FREE</span>
                             </div>
-                            <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, color: "#C8410A", paddingTop: "12px", fontSize: "16px" }}>
-                                <span>Total</span><span>₹{total}</span>
+
+                            <div className="flex flex-col sm:flex-row gap-3 mt-6">
+                                <button
+                                    onClick={() => setStep("details")}
+                                    className="flex-1 bg-white text-[#7C2D12] border-2 border-[#E8D8C0] py-3 rounded-xl text-sm font-bold cursor-pointer font-['Oswald'] tracking-[0.08em]"
+                                >
+                                    ← EDIT DETAILS
+                                </button>
+                                <button
+                                    onClick={handleConfirm}
+                                    disabled={cart.length === 0}
+                                    className="flex-1 bg-[#25D366] disabled:bg-[#A8A29E] disabled:cursor-not-allowed text-white border-none py-3 rounded-xl text-sm font-bold cursor-pointer font-['Oswald'] tracking-[0.08em]"
+                                >
+                                    SEND ON WHATSAPP
+                                </button>
                             </div>
-                        </div>
 
-                        <div style={{ background: "#fff", border: "1px solid #EDE0D0", borderRadius: "14px", padding: "20px", marginBottom: "16px" }}>
-                            <h4 style={{ color: "#A07850", fontSize: "11px", letterSpacing: "1px", fontWeight: 600, margin: "0 0 12px", textTransform: "uppercase" }}>Delivery Details</h4>
-                            {[["Name", form.name], ["Phone", form.phone], ["Address", form.address], ["Time", timeLabel], ...(form.notes ? [["Notes", form.notes]] : [])].map(([k, v]) => (
-                                <div key={k} style={{ display: "flex", gap: "12px", padding: "5px 0", fontSize: "14px" }}>
-                                    <span style={{ color: "#A07850", minWidth: "65px", fontWeight: 500, flexShrink: 0 }}>{k}</span>
-                                    <span style={{ color: "#1A0A00" }}>{v}</span>
-                                </div>
-                            ))}
-                        </div>
-
-                        <div style={{ background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: "10px", padding: "14px 16px", marginBottom: "16px", display: "flex", gap: "10px", alignItems: "flex-start" }}>
-                            <span style={{ fontSize: "20px", flexShrink: 0 }}>📲</span>
-                            <p style={{ margin: 0, fontSize: "13px", color: "#166534", lineHeight: 1.6 }}>
-                                Clicking <strong>"Confirm & Send"</strong> will open WhatsApp with your order details ready. Just press <strong>Send</strong> — we'll call you to confirm.
+                            <p className="m-0 mt-4 text-[11px] text-[#78716C]">
+                                ⏱️ Cut 30 min before delivery · 🌿 Banana leaf packed · 🥚 Free
+                                egg included
                             </p>
                         </div>
 
-                        <p style={{ color: "#7A5C42", fontSize: "13px", marginBottom: "18px" }}>💳 Payment: <strong>Cash on Delivery</strong></p>
-
-                        <div style={{ display: "flex", gap: "10px" }}>
-                            <button onClick={() => setStep("details")} style={{ flex: 1, padding: "13px", borderRadius: "10px", border: "1.5px solid #EDE0D0", background: "#FAF7F2", fontSize: "14px", fontWeight: 600, cursor: "pointer", color: "#5A3520" }}>← Back</button>
-                            <button onClick={handleConfirm}
-                                style={{ flex: 2, padding: "13px", borderRadius: "10px", border: "none", background: "#25D366", color: "#fff", fontSize: "15px", fontWeight: 700, cursor: "pointer" }}>
-                                📲 Confirm & Send on WhatsApp
-                            </button>
+                        <div className="bg-white border border-[#E8D8C0] rounded-2xl p-6 shadow-[0_8px_32px_rgba(0,0,0,0.06)] sticky top-5">
+                            <h3 className="font-['Oswald'] text-xl text-[#1A0800] tracking-[0.03em] mb-4">
+                                🛒 ITEMS
+                            </h3>
+                            <CartContents
+                                cart={cart}
+                                removeFromCart={removeFromCart}
+                                total={total}
+                                onProceed={handleConfirm}
+                            />
                         </div>
                     </div>
                 )}
             </div>
 
-            {/* ── MOBILE FLOATING CART BUTTON ──────────────────────────── */}
-            {step === "menu" && cart.length > 0 && (
-                <div className="mobile-fab" style={{ position: "fixed", bottom: "24px", left: "50%", transform: "translateX(-50%)", zIndex: 200, width: "calc(100% - 32px)", maxWidth: "400px" }}>
-                    <button onClick={() => setCartOpen(true)}
-                        style={{ width: "100%", background: "#C8410A", color: "#fff", border: "none", padding: "15px 20px", borderRadius: "14px", fontSize: "15px", fontWeight: 700, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", boxShadow: "0 4px 20px rgba(200,65,10,0.4)" }}>
-                        <span>🛒 View Order ({cart.length} item{cart.length > 1 ? "s" : ""})</span>
-                        <span>₹{total} →</span>
-                    </button>
-                </div>
-            )}
-
-            {/* ── MOBILE CART BOTTOM SHEET ─────────────────────────────── */}
-            {cartOpen && (
-                <div className="mobile-sheet-overlay" style={{ position: "fixed", inset: 0, zIndex: 300, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
-                    <div onClick={() => setCartOpen(false)} style={{ flex: 1, background: "rgba(0,0,0,0.45)" }} />
-                    <div style={{ background: "#fff", borderRadius: "20px 20px 0 0", padding: "20px", maxHeight: "80vh", overflowY: "auto" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-                            <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: "20px", color: "#1A0A00", margin: 0 }}>🛒 Your Order</h3>
-                            <button onClick={() => setCartOpen(false)} style={{ background: "none", border: "none", fontSize: "22px", cursor: "pointer", color: "#7A5C42" }}>✕</button>
+            {/* Mobile cart button + drawer */}
+            {isMobile && (
+                <>
+                    <div className="fixed bottom-0 left-0 right-0 bg-[#1A0800] border-t border-[#C8410A] p-3 z-40">
+                        <div className="max-w-[1100px] mx-auto flex items-center gap-3">
+                            <button
+                                onClick={() => setCartOpen(true)}
+                                className="flex-1 bg-white text-[#1A0800] rounded-xl py-3 font-['Oswald'] tracking-[0.08em] font-bold"
+                            >
+                                🛒 CART ({cart.length}) · ₹{total}
+                            </button>
+                            <button
+                                onClick={() => setStep(cart.length > 0 ? "details" : "menu")}
+                                className="bg-[#7C2D12] text-white rounded-xl py-3 px-4 font-['Oswald'] tracking-[0.08em] font-bold"
+                            >
+                                NEXT →
+                            </button>
                         </div>
-                        <CartContents onProceed={() => { setCartOpen(false); setStep("details"); }} />
                     </div>
-                </div>
+
+                    {cartOpen && (
+                        <div className="fixed inset-0 z-50">
+                            <button
+                                aria-label="Close cart"
+                                onClick={() => setCartOpen(false)}
+                                className="absolute inset-0 bg-black/50"
+                            />
+                            <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl p-5 border-t border-[#E8D8C0] max-h-[80vh] overflow-auto">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h3 className="font-['Oswald'] text-xl text-[#1A0800] tracking-[0.03em]">
+                                        🛒 YOUR ORDER
+                                    </h3>
+                                    <button
+                                        onClick={() => setCartOpen(false)}
+                                        className="bg-[#FEF2F2] border border-[#FECACA] text-[#DC2626] text-sm leading-none px-2 py-1 rounded-md"
+                                    >
+                                        Close
+                                    </button>
+                                </div>
+                                <CartContents
+                                    cart={cart}
+                                    removeFromCart={removeFromCart}
+                                    total={total}
+                                    onProceed={() => {
+                                        setCartOpen(false);
+                                        setStep("details");
+                                    }}
+                                />
+                            </div>
+                        </div>
+                    )}
+                </>
             )}
         </div>
     );

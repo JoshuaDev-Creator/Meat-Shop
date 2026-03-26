@@ -1,19 +1,48 @@
 import Link from "next/link";
+import { DM_Sans, Lora, Oswald, Playfair_Display, Tiro_Tamil } from "next/font/google";
 import "./globals.css";
 
 export const metadata = {
-  title: "NattuKadai - Fresh Meat Delivery, Tirunelveli",
+  title: "NaattuKadai - Fresh Meat Delivery, Tirunelveli",
   description: "Order fresh chicken, mutton & quail. Delivered to your door in Tirunelveli.",
 };
+
+const dmSans = DM_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  display: "swap",
+});
+
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  weight: ["700", "900"],
+  display: "swap",
+});
+
+const lora = Lora({
+  subsets: ["latin"],
+  style: ["normal", "italic"],
+  weight: ["400", "600", "700"],
+  display: "swap",
+});
+
+const oswald = Oswald({
+  subsets: ["latin"],
+  weight: ["700"],
+  display: "swap",
+});
+
+const tiroTamil = Tiro_Tamil({
+  subsets: ["tamil"],
+  weight: ["400"],
+  style: ["normal", "italic"],
+  display: "swap",
+});
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <head>
-        <link
-          href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600&display=swap"
-          rel="stylesheet"
-        />
         <style>{`
           .nav-link {
             color: #D4B896;
@@ -38,7 +67,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           .nav-order-btn:hover { background: #A83408; }
         `}</style>
       </head>
-      <body style={{ margin: 0, fontFamily: "'DM Sans', sans-serif", background: "#FAF7F2" }}>
+      <body
+        className={`${dmSans.className} ${playfair.className} ${lora.className} ${oswald.className} ${tiroTamil.className}`}
+        style={{ margin: 0, background: "#FAF7F2" }}
+      >
         <nav
           style={{
             background: "#1A0A00",
@@ -65,7 +97,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 letterSpacing: "-0.3px",
               }}
             >
-              NattuKadai
+              NaattuKadai
             </span>
           </Link>
 
@@ -89,7 +121,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }}
         >
           <p style={{ margin: "0 0 4px" }}>
-            <span style={{ color: "#D4B896", fontWeight: 600 }}>NattuKadai Fresh Meat</span> — Tirunelveli
+            <span style={{ color: "#D4B896", fontWeight: 600 }}>NaattuKadai Fresh Meat</span> — Tirunelveli
           </p>
           <p style={{ margin: 0 }}>📞 +91 9025761741 &nbsp;|&nbsp; Delivery within Tirunelveli city limits</p>
         </footer>
